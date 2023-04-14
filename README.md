@@ -1,4 +1,9 @@
-# voice-to-image (with optional chatgpt for prompt generation)
+# Talk2Slide (Whisper --> ChatGPT --> StableDiffusion)
+
+## Main Idea:
+1. Use Whisper to auto-transcribe an ongoing conversation / presentation
+2. Send the transcript to ChatGPT and ask it to generate a visual prompt relevant to the conversation
+3. Generate an image from that prompt using StableDiffusion
 
 ## Setup:
 ```
