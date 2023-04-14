@@ -14,6 +14,9 @@ python diffusers-server-local.py
 python whisper-real-time.py
 ```
 
+If you want to use ChatGPT to auto-generate prompts from the transcript you'll also need to 
+`export OPENAI_API_KEY= ...` in your terminal. 
+
 ## Main pipeline flow:
 - Initial idea of hooking up whisper to StableDiffusion to do live voice prompting was implemented by [@Huemin](https://twitter.com/huemin_art)
 - I then added async speech-to-text to enable capturing the full conversation transcript + ChatGPT support to turn that transcript into a relevant prompt
