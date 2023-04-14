@@ -24,7 +24,7 @@ python diffusers-server-local.py
 python whisper-real-time.py
 ```
 
-If you want to use ChatGPT to auto-generate prompts from the transcript you'll also need to 
+If you want to use ChatGPT to auto-generate prompts from the transcript you'll also need to run 
 `export OPENAI_API_KEY= ...` in your terminal. 
 
 
