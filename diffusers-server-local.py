@@ -34,18 +34,19 @@ def generate():
 
     if not prompt:
         return "No prompt provided.", 400
-    
-    print(prompt)
+    else:
+        print(prompt)
     
     #  first img pass:
     if settings.prev_init_img_strength >= 0.0 and os.path.exists("result.jpg"):
+        print("Using init image from previous run.")
         init = Image.open("result.jpg").resize(settings.first_stage_res)
         image = pipe_img2img(
             prompt,
             image=init,
             strength=1.0 - settings.prev_init_img_strength,
             num_inference_steps=settings.steps,
-            negative_prompt=settings.negative_prompt,
+            negative_prompt=settings.neg_prompt,
         ).images[0]
     else:
         image = pipe(
@@ -53,7 +54,7 @@ def generate():
             width=settings.first_stage_res[0],
             height=settings.first_stage_res[1],
             num_inference_steps=settings.steps,
-            negative_prompt=settings.negative_prompt,
+            negative_prompt=settings.neg_prompt,
         ).images[0]
 
     # 2pass for more detail:
@@ -62,9 +63,9 @@ def generate():
         image = pipe_img2img(
             prompt,
             image=image,
-            strength=1-settings.upscale_init_img_strength,
+            strength=1.0-settings.upscale_init_img_strength,
             num_inference_steps=settings.steps,
-            negative_prompt=settings.negative_prompt,
+            negative_prompt=settings.neg_prompt,
         ).images[0]
 
     img_io = BytesIO()

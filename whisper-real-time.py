@@ -57,7 +57,7 @@ def get_prompt_from_transcription(transcription,
             most_recent_section = most_recent_section[-(settings.section_length+1):]
 
         if mode == "chat_gpt":
-            print("-----------------------------------------------------")
+            print("\n-----------------------------------------------------")
             print("---------- Most recent transcript section: ----------")
             print(most_recent_section)
             prompt = get_chatgpt_prompt(most_recent_section)
@@ -191,7 +191,7 @@ def main():
                 prompt = get_prompt_from_transcription(transcription, mode = settings.prompt_mode)
 
                 if len(prompt) > 2 and prompt != "Thank you.":
-                    print("\n--- Rendering prompt: ", prompt)
+                    print("\n---> Rendering prompt: ", prompt)
                     asyncio.run(post_request_async(args.server_url, prompt, args.outdir))
 
                     # save the entire transcription to outputs/transcription.txt:
