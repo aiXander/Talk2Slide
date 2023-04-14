@@ -1,5 +1,0 @@
-pyaudio
-SpeechRecognition
-asyncio
-httpx
-git+https://github.com/openai/whisper.git

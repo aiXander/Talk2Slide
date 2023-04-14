@@ -1,0 +1,11 @@
+flask
+transformers
+accelerate
+pyaudio
+SpeechRecognition
+openai
+asyncio
+httpx
+git+https://github.com/huggingface/diffusers.git
+git+https://github.com/openai/whisper.git
+

@@ -3,9 +3,8 @@
 ## Setup:
 ```
 conda create -n v2i python=3.10 -y
-pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu117
-pip3 install -r requirements_diffusers.txt
-pip3 install -r requirements_whisper.txt
+python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu117
+python -m pip install -r requirements.txt
 ```
 
 ## Usage:
