@@ -1,6 +1,7 @@
 flask
 transformers
 accelerate
+xformers
 pyaudio
 SpeechRecognition
 openai
