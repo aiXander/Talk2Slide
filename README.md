@@ -11,9 +11,13 @@ pip3 install -r requirements_diffusers.txt
 pip3 install -r requirements_whisper.txt
 ```
 
+## Usage:
+1. run `python diffusers-server-local.py`
+2. run `python whisper-real-time.py`
+
 ## Main pipeline flow:
-	- Initial idea of hooking up whisper to StableDiffusion to do live voice prompting was implemented by (@Huemin)[https://twitter.com/huemin_art]
-	- I then added async speech-to-text to enable capturing the full conversation transcript + ChatGPT support to turn that transcript into a relevant prompt
+- Initial idea of hooking up whisper to StableDiffusion to do live voice prompting was implemented by [@Huemin](https://twitter.com/huemin_art)
+- I then added async speech-to-text to enable capturing the full conversation transcript + ChatGPT support to turn that transcript into a relevant prompt
 	
 ## Settings:
 `settings.py` contains the most prominant tweakable parameters of the pipeline, including the chatgpt task description and SD render settings.
