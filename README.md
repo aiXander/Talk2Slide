@@ -2,14 +2,14 @@
 
 ## Setup:
 ```
-conda create -n v2i python=3.10 -y
+conda create -n t2s python=3.10 -y
 python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu117
 python -m pip install -r requirements.txt
 ```
 
 ## Usage:
 ```
-conda activate v2i
+conda activate t2s
 python diffusers-server-local.py
 python whisper-real-time.py
 ```
