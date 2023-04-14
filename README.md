@@ -12,6 +12,7 @@
 ## Setup:
 ```
 conda create -n t2s python=3.10 -y
+conda activate t2s
 python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu117
 python -m pip install -r requirements.txt
 ```
