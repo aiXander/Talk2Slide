@@ -45,7 +45,7 @@ def generate():
             prompt,
             image=init,
             strength=1.0 - settings.prev_init_img_strength,
-            num_inference_steps=settings.steps,
+            num_inference_steps=settings.first_pass_steps,
             negative_prompt=settings.neg_prompt,
         ).images[0]
     else:
@@ -53,18 +53,23 @@ def generate():
             prompt,
             width=settings.first_stage_res[0],
             height=settings.first_stage_res[1],
-            num_inference_steps=settings.steps,
+            num_inference_steps=settings.first_pass_steps,
             negative_prompt=settings.neg_prompt,
         ).images[0]
 
     # 2pass for more detail:
     if settings.use_2pass:
+        min_upscale_steps = 6
+        f = 1-settings.upscale_init_img_strength
+        upscale_steps = int(max(settings.second_pass_steps * f, min_upscale_steps) / f)+1
+
         image = image.resize(settings.second_stage_res)
         image = pipe_img2img(
             prompt,
             image=image,
+            guidance_scale=7.0,
             strength=1.0-settings.upscale_init_img_strength,
-            num_inference_steps=settings.steps,
+            num_inference_steps=upscale_steps,
             negative_prompt=settings.neg_prompt,
         ).images[0]
 

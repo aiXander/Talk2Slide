@@ -12,12 +12,14 @@ except:
 def get_chatgpt_prompt(transcript, 
                        max_tokens = 70,   # 77 is the max for SD prompts so don't generate prompts that are too long for SD
                        chatgpt_mode = "chat-completion",
+                       #chatgpt_mode = "text-completion",
                        verbose = False):
 
     chatgpt_prompt = settings.task_description + '\n\"... ' + transcript + ' ...\"'
 
     if chatgpt_mode == 'text-completion': # use text completion
         response = openai.Completion.create(model="text-curie-001", prompt=chatgpt_prompt, temperature=0.7, max_tokens=max_tokens)
+        #response = openai.Completion.create(model="text-davinci-003", prompt=chatgpt_prompt, temperature=0.7, max_tokens=max_tokens)
         prompt = response.choices[0].text
 
     elif chatgpt_mode == 'chat-completion': # use chat completion

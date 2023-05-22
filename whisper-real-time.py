@@ -3,6 +3,7 @@ import io
 import os
 import speech_recognition as sr
 import whisper
+import openai
 import torch
 import time
 import asyncio
@@ -17,6 +18,7 @@ from datetime import datetime
 
 from chatgpt_prompting import get_chatgpt_prompt
 import settings
+
 
 def save_string_to_file(text, filename):
     with open(filename, 'w') as file:
@@ -37,9 +39,11 @@ async def post_request_async(server_url, prompt, outdir, timeout = 100):
 
         save_string_to_file(prompt, f'{outdir}/{timestring}.txt')
 
-def get_prompt_from_transcription(transcription, 
+def get_prompt_from_transcription(transcription, transcription_timestamps,
                                     mode = "chat_gpt", # "moving_buffer" or "last_line"
                                     verbose=False):
+    
+    current_timestamp = int(time.time())
 
     if verbose:
         # Clear the console to reprint the entire transcription.
@@ -50,17 +54,23 @@ def get_prompt_from_transcription(transcription,
 
     if mode == "moving_buffer" or mode == "chat_gpt":
         most_recent_section = ""
-        for line in transcription:
-            most_recent_section += f" {line}"
+        for i, line in enumerate(transcription):
+            age = current_timestamp - transcription_timestamps[i]
+            if age < settings.transcription_window_size:
+                most_recent_section += f" {line}"
 
         if len(most_recent_section) > settings.section_length:
             most_recent_section = most_recent_section[-(settings.section_length+1):]
 
         if mode == "chat_gpt":
-            print("\n-----------------------------------------------------")
-            print("---------- Most recent transcript section: ----------")
+            print("\n-------------------------------------------------")
+            print("---------- Active transcript section: ----------")
             print(most_recent_section)
             prompt = get_chatgpt_prompt(most_recent_section)
+            try:
+                prompt = get_chatgpt_prompt(most_recent_section)
+            except:
+                prompt = None
 
         elif mode == "moving_buffer":
             prompt = most_recent_section
@@ -74,7 +84,7 @@ def get_prompt_from_transcription(transcription,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="medium", help="Model to use",
+    parser.add_argument("--model", default="medium", help="Whisper model to use",
                         choices=["tiny", "base", "small", "medium", "large"])
     parser.add_argument("--non_english", action='store_true',
                         help="Don't use the english model.")
@@ -98,8 +108,6 @@ def main():
     current_time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     args.outdir = os.path.join(args.outdir, current_time)
 
-    # create outdir
-    os.makedirs(args.outdir,exist_ok=True)
     # The last time a recording was retreived from the queue.
     phrase_time = None
     # Current raw audio bytes.
@@ -116,6 +124,9 @@ def main():
     # Prevents permanent application hang and crash by using the wrong Microphone
     if 'linux' in platform:
         mic_name = args.default_microphone
+        #mic_name = "list"
+        #mic_name = "USB PnP"
+        #mic_name = "HDA Intel PCH: ALC1220 Analog (hw:0,0)"
         if not mic_name or mic_name == 'list':
             print("Available microphone devices are: ")
             for index, name in enumerate(sr.Microphone.list_microphone_names()):
@@ -124,10 +135,13 @@ def main():
         else:
             for index, name in enumerate(sr.Microphone.list_microphone_names()):
                 if mic_name in name:
-                    source = sr.Microphone(sample_rate=16000, device_index=index)
+                    print("\n\n---> Using microphone: ", name, " with index: ", index, "\n\n")
+                    source = sr.Microphone(device_index=index)
                     break
     else:
         source = sr.Microphone(sample_rate=16000)
+
+    print("\nAudio source set to: ", source)
         
     # Load / Download model
     model = args.model
@@ -139,8 +153,8 @@ def main():
     phrase_timeout = args.phrase_timeout
 
     temp_file = NamedTemporaryFile().name
-    transcription = ['']
-    prompt = ""
+    transcription, transcription_timestamps = [''], [int(time.time())]
+    prompt = None
     
     with source:
         recorder.adjust_for_ambient_noise(source)
@@ -160,37 +174,65 @@ def main():
 
     # Cue the user that we're ready to go.
     print("Listening...")
-
     last_transcription_time = time.time()
 
     while True:
         try:
-            now = datetime.utcnow()
             # Pull raw recorded audio from the queue.
             if not data_queue.empty() and (time.time() - last_transcription_time) > settings.transcribe_every_n_seconds:
+                os.makedirs(args.outdir,exist_ok=True)
+                print("Starting new transcription loop!")
                 last_sample = bytes()
                 while not data_queue.empty():
                     data = data_queue.get()
                     last_sample += data
 
+                 # Keep track of when this sample was recorded:
+                sample_timestamp = int(time.time())
+
                 # Use AudioData to convert the raw data to wav data.
+                print("Grabbing audio data...")
                 audio_data = sr.AudioData(last_sample, source.SAMPLE_RATE, source.SAMPLE_WIDTH)
                 wav_data = io.BytesIO(audio_data.get_wav_data())
-            
-                # Write wav data to the temporary file as bytes.
-                with open(temp_file, 'w+b') as f:
-                    f.write(wav_data.read())
+                transcription_start = time.time()
 
-                # Read the transcription.
-                result = audio_model.transcribe(temp_file, fp16=torch.cuda.is_available())
+                if 1: # local transcription:
+                    print("Performing local transcription...")
+                    with open(temp_file, 'w+b') as f:
+                        f.write(wav_data.read())
+                        f.flush()  # Ensure data is written to the file
+
+                    result = audio_model.transcribe(temp_file, fp16=torch.cuda.is_available())
+                else:
+                    print("Performing remote transcription...")
+                    # Create a temporary file and write the audio data to it
+                    audio_data = wav_data.read()
+                    # save the audio data to .mp3:
+                    #with open(os.path.join(args.outdir, f"audio.mp3"), 'wb') as f:
+                    #    f.write(audio_data)
+
+                    with NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+                        temp_file.write(audio_data)
+
+                    # Transcribe the audio using the temporary file
+                    with open(temp_file.name, "rb") as file:
+                        result = openai.Audio.transcribe("whisper-1", file)
+
+                print(f"Transcribed audio in {(time.time() - transcription_start):.2f}s")
                 last_transcription_time = time.time()
-
                 text = result['text'].strip()
+
                 transcription.append(text)
+                transcription_timestamps.append(sample_timestamp)
 
-                prompt = get_prompt_from_transcription(transcription, mode = settings.prompt_mode)
+                prompt = get_prompt_from_transcription(transcription, transcription_timestamps, mode = settings.prompt_mode)
+                if prompt is None:
+                    print("Prompt is None, skipping...")
+                    continue
+                
+                print(f"transcription --> prompt took: {(time.time() - last_transcription_time):.2f} seconds")
 
-                if len(prompt) > 2 and prompt != "Thank you.":
+                if len(prompt) > 2 and prompt != "Thank you." and prompt is not None:
                     print("\n---> Rendering prompt: ", prompt)
                     asyncio.run(post_request_async(args.server_url, prompt, args.outdir))
 
