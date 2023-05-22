@@ -5,6 +5,8 @@
 2. Send the transcript to ChatGPT and ask it to generate a visual prompt relevant to the conversation
 3. Generate an image from that prompt using StableDiffusion
 
+[Demo video](https://photos.google.com/u/2/photo/AF1QipPjgdPPQQE73OwLEGHqBDX_k_CjmLTLMAYeebxa)
+
 ## provenance:
 - Initial idea of hooking up whisper to StableDiffusion to do live voice prompting was implemented by [@Huemin](https://twitter.com/huemin_art)
 - I then added async speech-to-text to enable capturing the full conversation transcript + ChatGPT support to turn that transcript into a relevant prompt
